@@ -13,7 +13,7 @@ FLUTTER_SHA256=$(cat "$ENV_DIR/FLUTTER_SHA256" 2>/dev/null || echo 03de160d1c307
 FLUTTER_TAR_XZ="$CACHE_DIR/flutter.tar.xz"
 FLUTTER_DIR="$CACHE_DIR/flutter"
 FLUTTER="$FLUTTER_DIR/bin/flutter"
-DART="$CACHE_DIR/flutter/bin/flutter"
+DART="$CACHE_DIR/flutter/bin/dart"
 
 installed_flutter_version=$([ -x "$FLUTTER" ] && ("$FLUTTER" --version | head -n 1 | cut -d ' ' -f 2) || echo "none")
 if [ "$installed_flutter_version" = "$FLUTTER_VERSION" ]; then
@@ -32,21 +32,21 @@ rm -f "$FLUTTER_TAR_XZ"
 
 export PUB_CACHE="${CACHE_DIR}/dart-pub-cache/"
 echo "${ARROW} Looking for ${BUILD_DIR}/**/bin/*.dart"
-find "${BUILD_DIR}" | grep -E '/bin/.*\.dart$' | while read bin_dart_path; do
-  echo "${ARROW} Compiling $bin_dart_path"
-  bin_path=$(dirname "$bin_dart_path")
+find "${BUILD_DIR}" | grep -E '/bin/.*\.dart$' | while read dart_file_path; do
+  echo "${ARROW} Compiling $dart_file_path"
+  bin_dir_path=$(dirname "$dart_file_path")
   project_path=$(
-    cd "$bin_path/.."
+    cd "$bin_dir_path/.."
     pwd
   )
   pubspec_yaml_path="${project_path}/pubspec.yaml"
   if [ -f "${pubspec_yaml_path}" ]; then
-    echo dart pub get "--directory=${project_path}"
-    dart pub get "--directory=${project_path}"
+    echo "$DART" pub get "--directory=${project_path}"
+    "$DART" pub get "--directory=${project_path}"
   else
     echo "Skipping 'pub get' because config not found: ${pubspec_yaml_path}"
   fi
-  echo dart compile exe --sound-null-safety "$bin_dart_path"
-  dart compile exe --sound-null-safety "$bin_dart_path"
+  echo "$DART" compile exe --sound-null-safety "$dart_file_path"
+  "$DART" compile exe --sound-null-safety "$dart_file_path"
 done
 echo "${ARROW} heroku-buildpack-flutter-cli Done."
