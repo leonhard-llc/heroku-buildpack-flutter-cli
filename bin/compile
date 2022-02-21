@@ -1,0 +1,52 @@
+#!/usr/bin/env bash
+# https://devcenter.heroku.com/articles/buildpack-api
+set -e
+BUILD_DIR=$1
+CACHE_DIR=$2
+ENV_DIR=$3
+ARROW="-----> "
+
+echo "${ARROW} heroku-buildpack-flutter-cli Starting."
+
+FLUTTER_VERSION=$(cat "$ENV_DIR/FLUTTER_VERSION" 2>/dev/null || echo 2.10.2)
+FLUTTER_SHA256=$(cat "$ENV_DIR/FLUTTER_SHA256" 2>/dev/null || echo 03de160d1c30730a248cb5e168ec2de60f883d7e365e6cf57b27786e85436c0f)
+FLUTTER_TAR_XZ="$CACHE_DIR/flutter.tar.xz"
+FLUTTER_DIR="$CACHE_DIR/flutter"
+FLUTTER="$FLUTTER_DIR/bin/flutter"
+DART="$CACHE_DIR/flutter/bin/flutter"
+
+installed_flutter_version=$([ -x "$FLUTTER" ] && ("$FLUTTER" --version | head -n 1 | cut -d ' ' -f 2) || echo "none")
+if [ "$installed_flutter_version" = "$FLUTTER_VERSION" ]; then
+  echo "${ARROW} Flutter $FLUTTER_VERSION found in cache"
+else
+  flutter_url="https://storage.googleapis.com/flutter_infra_release/releases/stable/linux/flutter_linux_${FLUTTER_VERSION}-stable.tar.xz"
+  echo "${ARROW} Downloading $flutter_url"
+  curl -o "$FLUTTER_TAR_XZ" "$flutter_url"
+  echo "${ARROW} Checking that the SHA-256 digest is $FLUTTER_SHA256"
+  echo "$FLUTTER_SHA256  $FLUTTER_TAR_XZ" | shasum --algorithm 256 --check
+  echo "${ARROW} Extracting."
+  mkdir -p "$FLUTTER_DIR"
+  xz --decompress --stdout "$FLUTTER_TAR_XZ" | tar --extract --strip-components=1 "--directory=$FLUTTER_DIR/"
+fi
+rm -f "$FLUTTER_TAR_XZ"
+
+export PUB_CACHE="${CACHE_DIR}/dart-pub-cache/"
+echo "${ARROW} Looking for ${BUILD_DIR}/**/bin/*.dart"
+find "${BUILD_DIR}" | grep -E '/bin/.*\.dart$' | while read bin_dart_path; do
+  echo "${ARROW} Compiling $bin_dart_path"
+  bin_path=$(dirname "$bin_dart_path")
+  project_path=$(
+    cd "$bin_path/.."
+    pwd
+  )
+  pubspec_yaml_path="${project_path}/pubspec.yaml"
+  if [ -f "${pubspec_yaml_path}" ]; then
+    echo dart pub get "--directory=${project_path}"
+    dart pub get "--directory=${project_path}"
+  else
+    echo "Skipping 'pub get' because config not found: ${pubspec_yaml_path}"
+  fi
+  echo dart compile exe --sound-null-safety "$bin_dart_path"
+  dart compile exe --sound-null-safety "$bin_dart_path"
+done
+echo "${ARROW} heroku-buildpack-flutter-cli Done."
