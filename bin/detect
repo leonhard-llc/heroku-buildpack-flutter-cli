@@ -1,4 +1,4 @@
-#!sh
+#!/usr/bin/env bash
 BUILD_DIR="$1"
 if find "${BUILD_DIR}" | grep -E '/bin/.*\.dart$' >/dev/null; then
   echo Dart
