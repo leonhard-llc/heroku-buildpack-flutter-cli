@@ -48,7 +48,7 @@ find "${BUILD_DIR}" | grep -E '/bin/.*\.dart$' | while read dart_file_path; do
   fi
   echo "$DART" compile exe --sound-null-safety "$dart_file_path"
   "$DART" compile exe --sound-null-safety "$dart_file_path"
-  find "${project_path}/" -type f -or -type l |grep -v -E '.*\.dart$' | while read asset_path; do
+  find "${bin_dir_path}/" -type f -or -type l |grep -v -E '.*\.dart$' | while read asset_path; do
     echo "$ARROW Including asset file $asset_path"
     touch "$asset_path"
   done
