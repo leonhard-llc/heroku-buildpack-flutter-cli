@@ -30,9 +30,9 @@ Add it to your Heroku app with:
 $ heroku buildpacks:add --app=${APP_NAME} --index 1 https://github.com/leonhard-llc/heroku-buildpack-flutter-cli.git
 ```
 
-## Include Asset Files
+## Includes Asset Files
 When building a binary in a directory,
-finds all non-dart files under the directory and incldues them in the Heroku slug.
+the buildpack finds all non-dart files under the directory and includes them in the Heroku slug.
 
 This works around Dart Team's inexplicable abandonment
 of the [resource](https://pub.dev/packages/resource) package
