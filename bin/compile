@@ -15,7 +15,10 @@ FLUTTER_DIR="$CACHE_DIR/flutter"
 FLUTTER="$FLUTTER_DIR/bin/flutter"
 DART="$CACHE_DIR/flutter/bin/dart"
 
-installed_flutter_version=$([ -x "$FLUTTER" ] && ("$FLUTTER" --version | head -n 1 | cut -d ' ' -f 2) || echo "none")
+# The pipeline below uses grep to work around this bug:
+# "flutter version to not crash when it fails to write to stdout"
+# https://github.com/flutter/flutter/issues/99617
+installed_flutter_version=$([ -x "$FLUTTER" ] && ("$FLUTTER" --version | grep -E '^Flutter ' | cut -d ' ' -f 2) || echo "none")
 if [ "$installed_flutter_version" = "$FLUTTER_VERSION" ]; then
   echo "$ARROW Flutter $FLUTTER_VERSION found in cache"
 else
